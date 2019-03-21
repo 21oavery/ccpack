@@ -94,31 +94,108 @@ end
 local function pullKeyword(str)
     for i=1, #keywords do
         if startsWith(str, keywords[i]) then
-            return keywords[i]
+            local s = keywords[i]
+            return {#s, s}
         end
     end
     return
 end
 
-local function pull
+local opCont = {
+    ["{"] = true,
+    ["}"] = true,
+    ["("] = true,
+    [")"] = true,
+    ["["] = true,
+    ["]"] = true,
+    [";"] = true,
+    [","] = true,
+    ["."] = true,
+    [":"] = true,
+    ["+"] = {["+"] = true, ["="] = true},
+    ["-"] = {["-"] = true, ["="] = true, [">"] = true},
+    ["*"] = {["="] = true},
+    ["/"] = {["="] = true},
+    ["%"] = {["="] = true},
+    ["<"] = {["<"] = {["="] = true}, ["="] = true},
+    [">"] = {[">"] = {["="] = true}, ["="] = true},
+    ["&"] = {["&"] = true, ["="] = true},
+    ["^"] = {["="] = true},
+    ["|"] = {["|"] = true, ["="] = true},
+    ["?"] = true,
+    ["!"] = {["="] = true},
+    ["~"] = true,
+    ["="] = {["="] = true}
+}
+
+local function pullOperator(str)
+    local length = #str
+    if length == 0 then return end
+    local i = 1
+    local c
+    local o = opCont
+    while i <= length do
+        c = string.sub(str, i, i)
+        o = o[c]
+        if not o then
+            if i == 1 then return end
+            return string.sub(str, 1, i - 1)
+        end
+        i = i + 1
+        if o == true then
+            return string.sub(str, 1, i)
+        end
+    end
+    return str
+end
+
+local function findCharsByList(str, start, list)
+    local length = #str
+    if length == 0 then return end
+    local i = start
+    local c
+    while i <= length do
+        c = string.sub(str, i, i)
+        if not list[c] then
+            i = i - start
+            if i == 0 then return end
+            return i
+        end
+    end
+    return length - start + 1
+end
+
+local function pullNumber(str)
+    local length = #str
+    if length == 0 then return end
+    local c = string.sub(str, 1, 1)
+    if c == "0" then
+        if length == 1 then return {1, 0} end
+        c = string.sub(str, 2, 2)
+        if (c == "x") or (c == "X") then
+            local r = findCharsByList(str, 3, fastHex)
+            if not r then return end
+            local s = string.sub(str, 1, r + 2)
+        else
+            local r = findCharsByList(str, 2, fastOct)
+            if not r then return end
+            return string.sub(str, 1, r + 2)
+        end
+    end
+    local r = findCharsByList(str, 1, fastDec)
+    if not r then
+        
 
 local function pullIdentifier(str)
-    local len = #str
-    if len == 0 then
+    local length = #str
+    if length == 0 then
         return
     end
     local s1 = string.sub(str, 1, 1)
     if not fastAlphaUnder[s1] then
         return
     end
-    local i = 2
-    local c
-    while i <= len do
-        c = string.sub(str, i, i)
-        if not (fastAlphaUnder[c] or fastDec[c]) then
-            return string.sub(str, 1, i - 1)
-        end
-    end
+    local i = findCharsByList(str, )
     return str
 end
 
